@@ -1,0 +1,35 @@
+@startuml
+
+class User {
+    +email: String
+    +phone: String
+    +password: String
+    +username: String
+    +profilePicture: String
+    +role: Role
+    +isEnabled: Boolean
+    +isNotLocked: Boolean
+    +isUsingMfa: Boolean
+    +updateAccount()
+    +deleteAccount()
+}
+
+class Admin {
+    +createArticle()
+    +editArticle()
+    +deleteArticle()
+    +deleteUser()
+}
+
+class BlogArticle {
+    +title: String
+    +creationDate: Date
+    +coverImage: String
+    +description: String
+}
+
+User <|-- Admin
+Admin "1" -- "*" BlogArticle : "creates"
+User "1" -- "*" BlogArticle : "searches & sorts"
+
+@enduml

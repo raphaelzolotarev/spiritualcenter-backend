@@ -1,0 +1,31 @@
+@startuml
+
+entity User {
+    + user_id: INT [PK]
+    + email: VARCHAR(255) [UNIQUE, NOT NULL]
+    + phone: VARCHAR(255) [UNIQUE, NOT NULL]
+    + password: VARCHAR(255) [NOT NULL]
+    + username: VARCHAR(255) [UNIQUE, NOT NULL]
+    + profile_picture: VARCHAR(255)
+    + isEnabled: BOOLEAN [NOT NULL]
+    + isNotLocked: BOOLEAN [NOT NULL]
+    + isUsingMfa: BOOLEAN [NOT NULL]
+    + role: ENUM('USER', 'ADMIN')
+}
+
+entity BlogArticle {
+    + article_id: INT [PK]
+    + title: VARCHAR(255) [NOT NULL]
+    + creation_date: DATETIME [DEFAULT NOW()]
+    + cover_image: VARCHAR(255)
+    + description: TEXT
+    + author_id: INT [FK -> User(user_id)]
+}
+
+User ||--o{ BlogArticle : "creates"
+User ||--o{ BlogArticle : "searches & sorts"
+Admin ||--|> User : "inherits"
+Admin ||--o{ BlogArticle : "manages"
+Admin ||--o{ User : "deletes"
+
+@enduml
