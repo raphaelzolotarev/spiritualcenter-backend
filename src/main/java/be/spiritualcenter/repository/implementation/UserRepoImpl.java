@@ -1,16 +1,22 @@
 package be.spiritualcenter.repository.implementation;
 
+import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.repository.UserRepo;
+import be.spiritualcenter.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -30,7 +36,7 @@ import static be.spiritualcenter.query.UserQuery.*;
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class UserRepoImpl implements UserRepo<User> {
+public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
 
     private final NamedParameterJdbcTemplate jdbc;
     private final BCryptPasswordEncoder encoder;
@@ -92,6 +98,31 @@ public class UserRepoImpl implements UserRepo<User> {
     }
     private String getVerificationURL(String key, String type){
         return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type + "/" + key).toUriString();
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = getUserByUsername(username);
+        if(user == null){
+            log.error("User not found");
+            throw new UsernameNotFoundException("User not found");
+        } else {
+            log.info("User {} found.", username);
+            return new UserPrincipal(user, user.getRole());
+        }
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        try{
+            User user = jdbc.queryForObject(SELECT_USER_BY_USERNAME_QUERY, Map.of("username", username), new UserRowMapper());
+            return user;
+        } catch (EmptyResultDataAccessException e){
+            throw new APIException("User not found with this username: "+username);
+        }catch (Exception e){
+            log.error(e.getMessage());
+            throw new APIException("An error occurred.");
+        }
     }
 }
 

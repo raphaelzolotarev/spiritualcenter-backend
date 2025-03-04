@@ -23,4 +23,8 @@ public class UserServiceImpl implements UserService {
     public UserDTO createUser(User user) {
         return UserDTOMapper.fromUser(userRepo.create(user));
     }
+    @Override
+    public UserDTO getUserByUsername(String username) {
+        return UserDTOMapper.fromUser(userRepo.getUserByUsername(username));
+    }
 }

@@ -11,6 +11,7 @@ import java.util.Collection;
  */
 public interface UserRepo <T extends User>{
     T create(T user);
+    User getUserByUsername(String username);
     Collection<T> list(int page, int pageSize);
     T get(Long id);
     T update(T data);
