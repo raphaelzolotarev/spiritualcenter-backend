@@ -33,4 +33,4 @@ build/
 .vscode/
 
 src/main/resources/config.yml
-src/main/resources/config2.yml
+src/main/java/be/spiritualcenter/passwords/MyTwilioCreds.java

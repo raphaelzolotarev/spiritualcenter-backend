@@ -6,6 +6,7 @@ package be.spiritualcenter.utils;
  * @since 03/03/2025
  */
 
+import be.spiritualcenter.passwords.MyTwilioCreds;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -13,9 +14,9 @@ import com.twilio.type.PhoneNumber;
 import static com.twilio.rest.api.v2010.account.Message.creator;
 
 public class SMSutil {
-    public static final String FROM_NUMBER = "<Your own number from Twilio>";
-    public static final String SID_KEY = "<Your own key>";
-    public static final String TOKEN_KEY = "<Your own key>";
+    public static final String FROM_NUMBER = MyTwilioCreds.FROM_NUMBER;
+    public static final String SID_KEY = MyTwilioCreds.SID_KEY;
+    public static final String TOKEN_KEY = MyTwilioCreds.TOKEN_KEY;
 
     public static void sendSMS(String to, String messageBody) {
         Twilio.init(SID_KEY, TOKEN_KEY);
