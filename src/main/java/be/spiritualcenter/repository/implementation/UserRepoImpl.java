@@ -29,7 +29,9 @@ import java.util.UUID;
 
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
 import static be.spiritualcenter.query.UserQuery.*;
+import static be.spiritualcenter.utils.SMSutil.sendSMS;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.apache.commons.lang3.time.DateFormatUtils.format;
 import static org.apache.commons.lang3.time.DateUtils.addDays;
 
@@ -95,11 +97,11 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     @Override
     public void sendVerificationCode(UserDTO user) {
         String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
-        String verificationCode = randomAlphabetic(8).toUpperCase();
+        String verificationCode = randomNumeric(4);
         try {
             jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
             jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code", verificationCode, "expirationDate", expirationDate));
-            sendSMS(user.getPhone(), "From: SecureCapita \nVerification code\n" + verificationCode);
+            sendSMS(user.getPhone(), "From: Spiritual Center \nVerification code\n" + verificationCode);
             log.info("Verification Code: {}", verificationCode);
         } catch (Exception exception) {
             log.error(exception.getMessage());

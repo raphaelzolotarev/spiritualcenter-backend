@@ -8,8 +8,10 @@ package be.spiritualcenter.resource;
 
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.domain.HttpResponse;
+import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.dto.UserDTO;
 import be.spiritualcenter.form.LoginForm;
+import be.spiritualcenter.provider.TokenProvider;
 import be.spiritualcenter.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ import static org.springframework.http.HttpStatus.OK;
 public class UserResource {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final TokenProvider token;
 
     //LOGIN
     @PostMapping("/login")
@@ -50,7 +53,11 @@ public class UserResource {
             return ResponseEntity.ok().body(
                     HttpResponse.builder()
                             .timeStamp(now().toString())
-                            .data(Map.of("user", user))
+                            .data(Map.of(
+                                    "user", user,
+                                    "access_token", token.createAccessToken(getUserPrincipal(user)),
+                                    "refresh_token", token.createRefreshToken(getUserPrincipal(user))
+                            ))
                             .message("Login successful")
                             .status(HttpStatus.OK)
                             .statusCode(HttpStatus.OK.value())
@@ -62,12 +69,20 @@ public class UserResource {
             return ResponseEntity.ok().body(
                     HttpResponse.builder()
                             .timeStamp(now().toString())
-                            .data(Map.of("user", user))
+                            .data(Map.of(
+                                    "user", user,
+                                    "access_token", token.createAccessToken(getUserPrincipal(user)),
+                                    "refresh_token", token.createRefreshToken(getUserPrincipal(user))
+                            ))
                             .message("Verification Code Sent")
                             .status(OK)
                             .statusCode(OK.value())
                             .build());
         }
+
+    private UserPrincipal getUserPrincipal(UserDTO user) {
+        return new UserPrincipal(userService.getUser(user.getUsername()), user.getRole());
+    }
 
     //REGISTER
     @PostMapping("/register")
