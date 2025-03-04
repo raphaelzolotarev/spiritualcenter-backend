@@ -32,5 +32,5 @@ build/
 ### VS Code ###
 .vscode/
 
-!**/src/main/resources/config.yml
-!**/src/main/resources/config2.yml
+src/main/resources/config.yml
+src/main/resources/config2.yml
