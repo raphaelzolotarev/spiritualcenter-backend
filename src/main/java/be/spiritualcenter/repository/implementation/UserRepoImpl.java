@@ -1,6 +1,7 @@
 package be.spiritualcenter.repository.implementation;
 
 import be.spiritualcenter.domain.UserPrincipal;
+import be.spiritualcenter.dto.UserDTO;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.domain.User;
@@ -22,11 +23,16 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
 import static be.spiritualcenter.query.UserQuery.*;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.time.DateFormatUtils.format;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
+
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -38,6 +44,7 @@ import static be.spiritualcenter.query.UserQuery.*;
 @Slf4j
 public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
 
+    private static final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
     private final NamedParameterJdbcTemplate jdbc;
     private final BCryptPasswordEncoder encoder;
 
@@ -83,6 +90,21 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     @Override
     public Boolean delete(Long id) {
         return null;
+    }
+
+    @Override
+    public void sendVerificationCode(UserDTO user) {
+        String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
+        String verificationCode = randomAlphabetic(8).toUpperCase();
+        try {
+            jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
+            jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code", verificationCode, "expirationDate", expirationDate));
+            sendSMS(user.getPhone(), "From: SecureCapita \nVerification code\n" + verificationCode);
+            log.info("Verification Code: {}", verificationCode);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
     }
 
 

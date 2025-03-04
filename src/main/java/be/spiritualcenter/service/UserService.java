@@ -11,4 +11,5 @@ import be.spiritualcenter.dto.UserDTO;
 public interface UserService {
     UserDTO createUser(User user);
     UserDTO getUserByUsername(String username);
+    void sendVerificationCode(UserDTO user);
 }

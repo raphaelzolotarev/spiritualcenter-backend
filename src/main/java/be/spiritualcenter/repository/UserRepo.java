@@ -1,6 +1,7 @@
 package be.spiritualcenter.repository;
 
 import be.spiritualcenter.domain.User;
+import be.spiritualcenter.dto.UserDTO;
 
 import java.util.Collection;
 /*
@@ -16,4 +17,5 @@ public interface UserRepo <T extends User>{
     T get(Long id);
     T update(T data);
     Boolean delete(Long id);
+    void sendVerificationCode(UserDTO user);
 }

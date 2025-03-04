@@ -27,6 +27,7 @@ import java.net.URI;
 import java.util.Map;
 
 import static java.time.LocalTime.now;
+import static org.springframework.http.HttpStatus.OK;
 
 
 @RestController
@@ -35,19 +36,40 @@ import static java.time.LocalTime.now;
 public class UserResource {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+
+    //LOGIN
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginForm.getUsername(), loginForm.getPassword()));
-        UserDTO userDTO = userService.getUserByUsername(loginForm.getUsername());
-        return ResponseEntity.ok().body(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .data(Map.of("user", userDTO))
-                        .message("Login successful")
-                        .status(HttpStatus.OK)
-                        .statusCode(HttpStatus.OK.value())
-                        .build());
+        UserDTO user = userService.getUserByUsername(loginForm.getUsername());
+        return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+
     }
+        //LOGIN USER NO MFA
+        private ResponseEntity<HttpResponse> sendResponse(UserDTO user) {
+            return ResponseEntity.ok().body(
+                    HttpResponse.builder()
+                            .timeStamp(now().toString())
+                            .data(Map.of("user", user))
+                            .message("Login successful")
+                            .status(HttpStatus.OK)
+                            .statusCode(HttpStatus.OK.value())
+                            .build());
+        }
+        //LOGIN USER WITH MFA
+        private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
+            userService.sendVerificationCode(user);
+            return ResponseEntity.ok().body(
+                    HttpResponse.builder()
+                            .timeStamp(now().toString())
+                            .data(Map.of("user", user))
+                            .message("Verification Code Sent")
+                            .status(OK)
+                            .statusCode(OK.value())
+                            .build());
+        }
+
+    //REGISTER
     @PostMapping("/register")
     public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user){
         UserDTO userDTO = userService.createUser(user);
