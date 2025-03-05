@@ -18,4 +18,6 @@ public interface UserRepo <T extends User>{
     T update(T data);
     Boolean delete(Long id);
     void sendVerificationCode(UserDTO user);
+
+    User verifyCode(String username, String code);
 }

@@ -19,15 +19,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Map;
 
+import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static java.time.LocalTime.now;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -38,7 +36,7 @@ import static org.springframework.http.HttpStatus.OK;
 public class UserResource {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
-    private final TokenProvider token;
+    private final TokenProvider tokenProvider;
 
     //LOGIN
     @PostMapping("/login")
@@ -55,8 +53,8 @@ public class UserResource {
                             .timeStamp(now().toString())
                             .data(Map.of(
                                     "user", user,
-                                    "access_token", token.createAccessToken(getUserPrincipal(user)),
-                                    "refresh_token", token.createRefreshToken(getUserPrincipal(user))
+                                    "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
+                                    "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(user))
                             ))
                             .message("Login successful")
                             .status(HttpStatus.OK)
@@ -71,8 +69,8 @@ public class UserResource {
                             .timeStamp(now().toString())
                             .data(Map.of(
                                     "user", user,
-                                    "access_token", token.createAccessToken(getUserPrincipal(user)),
-                                    "refresh_token", token.createRefreshToken(getUserPrincipal(user))
+                                    "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
+                                    "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(user))
                             ))
                             .message("Verification Code Sent")
                             .status(OK)
@@ -81,7 +79,7 @@ public class UserResource {
         }
 
     private UserPrincipal getUserPrincipal(UserDTO user) {
-        return new UserPrincipal(userService.getUser(user.getUsername()), user.getRole());
+        return new UserPrincipal(toUser(userService.getUserByUsername(user.getUsername())), user.getRole());
     }
 
     //REGISTER
@@ -95,6 +93,20 @@ public class UserResource {
                         .message("User created")
                         .status(HttpStatus.CREATED)
                         .statusCode(HttpStatus.CREATED.value())
+                        .build());
+    }
+
+    @GetMapping("/verify/code/{username}/{code}")
+    public ResponseEntity<HttpResponse> verifyCode(@PathVariable("username") String username, @PathVariable("code") String code){
+        UserDTO user = userService.verifyCode(username, code);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user, "access_token", tokenProvider.createAccessToken(getUserPrincipal(user))
+                                , "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(user))))
+                        .message("Login Success")
+                        .status(OK)
+                        .statusCode(OK.value())
                         .build());
     }
 

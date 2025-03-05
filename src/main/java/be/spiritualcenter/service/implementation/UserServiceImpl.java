@@ -15,17 +15,19 @@ import be.spiritualcenter.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import static be.spiritualcenter.dtomapper.UserDTOMapper.fromUser;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepo<User> userRepo;
     @Override
     public UserDTO createUser(User user) {
-        return UserDTOMapper.fromUser(userRepo.create(user));
+        return mapToUserDTO(userRepo.create(user));
     }
     @Override
     public UserDTO getUserByUsername(String username) {
-        return UserDTOMapper.fromUser(userRepo.getUserByUsername(username));
+        return mapToUserDTO(userRepo.getUserByUsername(username));
     }
 
     @Override
@@ -34,7 +36,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUser(String username) {
-        return userRepo.getUserByUsername(username);
+    public UserDTO verifyCode(String username, String code) {
+        return mapToUserDTO(userRepo.verifyCode(username, code));
+    }
+
+    private UserDTO mapToUserDTO(User user){
+        return fromUser(user);
     }
 }

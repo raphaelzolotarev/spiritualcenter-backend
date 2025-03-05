@@ -13,5 +13,5 @@ public interface UserService {
     UserDTO getUserByUsername(String username);
     void sendVerificationCode(UserDTO user);
 
-    User getUser(String username);
+    UserDTO verifyCode(String username, String code);
 }

@@ -101,10 +101,38 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
         try {
             jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
             jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code", verificationCode, "expirationDate", expirationDate));
-            sendSMS(user.getPhone(), "From: Spiritual Center \nVerification code\n" + verificationCode);
+            //sendSMS(user.getPhone(), "From: Spiritual Center \nVerification code\n" + verificationCode);
             log.info("Verification Code: {}", verificationCode);
         } catch (Exception exception) {
             log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public User verifyCode(String username, String code) {
+        if(isVerificationCodeExpired(code)) throw new APIException("This code has expired. Please login again.");
+        try {
+            User userByCode = jdbc.queryForObject(SELECT_USER_BY_USER_CODE_QUERY, Map.of("code", code), new UserRowMapper());
+            User userByUsername = jdbc.queryForObject(SELECT_USER_BY_USERNAME_QUERY, Map.of("username", username), new UserRowMapper());
+            if(userByCode.getUsername().equalsIgnoreCase(userByUsername.getUsername())) {
+                jdbc.update(DELETE_CODE, Map.of("code", code));
+                return userByCode;
+            } else {
+                throw new APIException("Code is invalid. Please try again.");
+            }
+        } catch (EmptyResultDataAccessException exception) {
+            throw new APIException("Could not find record");
+        } catch (Exception exception) {
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+    private Boolean isVerificationCodeExpired(String code) {
+        try {
+            return jdbc.queryForObject(SELECT_CODE_EXPIRATION_QUERY, Map.of("code", code), Boolean.class);
+        } catch (EmptyResultDataAccessException exception) {
+            throw new APIException("This code is not valid. Please login again.");
+        } catch (Exception exception) {
             throw new APIException("An error occurred. Please try again.");
         }
     }
