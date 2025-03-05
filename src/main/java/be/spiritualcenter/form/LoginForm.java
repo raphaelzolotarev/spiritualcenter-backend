@@ -6,13 +6,14 @@ package be.spiritualcenter.form;
  * @since 03/03/2025
  */
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class LoginForm {
-    @NotEmpty
+    @NotEmpty(message = "Username cannot be empty")
     private String username;
-    @NotEmpty
+    @NotEmpty(message = "Password cannot be empty")
     private String password;
 }

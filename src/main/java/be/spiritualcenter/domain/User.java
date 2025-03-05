@@ -22,6 +22,7 @@ import jakarta.validation.constraints.NotEmpty;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class User {
     private int id;
+    @NotEmpty(message = "Email cannot be empty")
     @Email(message = "Invalid email")
     private String email;
     @NotEmpty(message = "Password cannot be empty")
