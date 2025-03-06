@@ -27,4 +27,6 @@ public interface UserRepo <T extends User>{
     User verifyPasswordKey(String key);
 
     void renewPassword(String key, String pass, String confirmPass);
+
+    T verifyAccountKey(String key);
 }

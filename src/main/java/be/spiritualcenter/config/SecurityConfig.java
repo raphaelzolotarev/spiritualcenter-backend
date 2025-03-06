@@ -53,6 +53,7 @@ public class SecurityConfig {
             "/user/verify/code/**",
             "/user/resetpassword/**",
             "/user/verify/password/**",
+            "/user/verify/account/**"
     };
 
     @Bean

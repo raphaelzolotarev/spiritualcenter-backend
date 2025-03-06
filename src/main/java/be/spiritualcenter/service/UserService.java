@@ -2,6 +2,9 @@ package be.spiritualcenter.service;
 
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.dto.UserDTO;
+
+import javax.swing.*;
+
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -20,4 +23,6 @@ public interface UserService {
     UserDTO verifyPasswordKey(String key);
 
     void renewPassword(String key, String pass, String confirmPass);
+
+    UserDTO verifyAccountKey(String key);
 }
