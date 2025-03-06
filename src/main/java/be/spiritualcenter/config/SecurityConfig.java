@@ -6,6 +6,7 @@ package be.spiritualcenter.config;
  * @since 03/03/2025
  */
 
+import be.spiritualcenter.filter.CustomAuthorizationFilter;
 import be.spiritualcenter.handler.CustomAccessDeniedHandler;
 import be.spiritualcenter.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
+    private final CustomAuthorizationFilter customAuthorizationFilter;
 
     private static final String[] PUBLIC_URLS = {"/user/login/**", "/user/register/**", "/user/verify/code/**"};
 
@@ -62,7 +64,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "user/delete/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-        //        .addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();
     }

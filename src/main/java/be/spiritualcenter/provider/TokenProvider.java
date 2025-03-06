@@ -7,6 +7,7 @@ package be.spiritualcenter.provider;
  */
 
 import be.spiritualcenter.domain.UserPrincipal;
+import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.service.UserService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -25,6 +26,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -73,6 +75,7 @@ public class TokenProvider {
         // Retrieves the user's roles
         private String[] getClaimsFromUser(UserPrincipal userPrincipal) {
             return userPrincipal.getAuthorities().stream().map(GrantedAuthority::getAuthority).toArray(String[]::new);
+
         }
         // Retrieves the user's roles via TOKEN
         private String[] getClaimsFromToken(String token) {
@@ -80,8 +83,9 @@ public class TokenProvider {
             return verifier.verify(token).getClaim(AUTHORITIES).asArray(String.class);
         }
         // Converts the roles from the token into GrantedAuthority objects usable by Spring Security
-        public List<GrantedAuthority> getAuthorities(String token) {
-            return stream(getClaimsFromToken(token)).map(SimpleGrantedAuthority::new).collect(toList());
+        public List<GrantedAuthority>getAuthorities(String token) {
+            String[] claims = getClaimsFromToken(token);
+            return stream(claims).map(SimpleGrantedAuthority::new).collect(toList());
         }
 
 
