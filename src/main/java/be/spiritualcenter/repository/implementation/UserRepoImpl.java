@@ -2,6 +2,7 @@ package be.spiritualcenter.repository.implementation;
 
 import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.dto.UserDTO;
+import be.spiritualcenter.enums.VerificationType;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.domain.User;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
+import static be.spiritualcenter.enums.VerificationType.PASSWORD;
 import static be.spiritualcenter.query.UserQuery.*;
 import static be.spiritualcenter.utils.SMSutil.sendSMS;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -127,6 +129,63 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             throw new APIException("An error occurred. Please try again.");
         }
     }
+
+    @Override
+    public void resetPassword(String email) {
+        if(getEmailCount(email.trim().toLowerCase()) <= 0) throw new APIException("There is no account for this email address.");
+        try {
+            String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
+            User user = getUserByEmail(email);
+            String verificationUrl = getVerificationURL(UUID.randomUUID().toString(), PASSWORD.getType());
+            jdbc.update(DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY, Map.of("userId",  user.getId()));
+            jdbc.update(INSERT_PASSWORD_VERIFICATION_QUERY, Map.of("userId",  user.getId(), "url", verificationUrl, "expirationDate", expirationDate));
+            //sendEmail(user.getFirstName(), username, verificationUrl, PASSWORD);
+            log.info("Verification URL: {}", verificationUrl);
+        } catch (Exception exception) {
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public User verifyPasswordKey(String key) {
+        if(isLinkExpired(key, PASSWORD)) throw new APIException("This link has expired. Please reset your password again.");
+        try {
+            User user = jdbc.queryForObject(SELECT_USER_BY_PASSWORD_URL_QUERY, Map.of("url", getVerificationURL(key, PASSWORD.getType())), new UserRowMapper());
+            //jdbc.update("DELETE_USER_FROM_PASSWORD_VERIFICATION_QUERY", of("id", user.getId())); //If link can be used only one time
+            return user;
+        } catch (EmptyResultDataAccessException exception) {
+            log.error(exception.getMessage());
+            throw new APIException("This link is not valid. Please reset your password again.");
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public void renewPassword(String key, String password, String confirmPassword) {
+        if(!password.equals(confirmPassword)) throw new APIException("Passwords don't match. Please try again.");
+        try {
+            jdbc.update(UPDATE_USER_PASSWORD_BY_URL_QUERY, Map.of("password", encoder.encode(password), "url", getVerificationURL(key, PASSWORD.getType())));
+            jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, Map.of("url", getVerificationURL(key, PASSWORD.getType())));
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    private Boolean isLinkExpired(String key, VerificationType password) {
+        try {
+            return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL, Map.of("url", getVerificationURL(key, password.getType())), Boolean.class);
+        } catch (EmptyResultDataAccessException exception) {
+            log.error(exception.getMessage());
+            throw new APIException("This link is not valid. Please reset your password again");
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again");
+        }
+    }
+
     private Boolean isVerificationCodeExpired(String code) {
         try {
             return jdbc.queryForObject(SELECT_CODE_EXPIRATION_QUERY, Map.of("code", code), Boolean.class);
@@ -171,6 +230,18 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             return user;
         } catch (EmptyResultDataAccessException e){
             throw new APIException("User not found with this username: "+username);
+        }catch (Exception e){
+            log.error(e.getMessage());
+            throw new APIException("An error occurred.");
+        }
+    }
+    @Override
+    public User getUserByEmail(String email) {
+        try{
+            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
+            return user;
+        } catch (EmptyResultDataAccessException e){
+            throw new APIException("User not found with this email: "+email);
         }catch (Exception e){
             log.error(e.getMessage());
             throw new APIException("An error occurred.");

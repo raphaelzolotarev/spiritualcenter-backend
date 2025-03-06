@@ -17,6 +17,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.ctc.wstx.util.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +37,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
 @Component
+@RequiredArgsConstructor
 public class TokenProvider {
     private static final String SPIRITUALCENTER = "SPIRITUALCENTER";
     private static final String ALL_LOGGED_USERS = "ALL_LOGGED_USERS";
@@ -46,6 +48,8 @@ public class TokenProvider {
 
     @Value("${jwt.secret}")
     private String secret;
+    private final UserService userService;
+
 
 
     /**CREATE**/
@@ -65,7 +69,7 @@ public class TokenProvider {
         }
         // Creates an authentication object based on a token
         public Authentication getAuthentication(String username, List<GrantedAuthority> authorities, HttpServletRequest request) {
-            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
+            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserByUsername(username), null, authorities);
             userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             return userPasswordAuthToken;
         }

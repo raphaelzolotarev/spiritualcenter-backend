@@ -40,6 +40,21 @@ public class UserServiceImpl implements UserService {
         return mapToUserDTO(userRepo.verifyCode(username, code));
     }
 
+    @Override
+    public void resetPassword(String email) {
+        userRepo.resetPassword(email);
+    }
+
+    @Override
+    public UserDTO verifyPasswordKey(String key) {
+        return mapToUserDTO(userRepo.verifyPasswordKey(key));
+    }
+
+    @Override
+    public void renewPassword(String key, String pass, String confirmPass) {
+        userRepo.renewPassword(key, pass, confirmPass);
+    }
+
     private UserDTO mapToUserDTO(User user){
         return fromUser(user);
     }

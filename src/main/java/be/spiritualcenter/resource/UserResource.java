@@ -10,10 +10,12 @@ import be.spiritualcenter.domain.User;
 import be.spiritualcenter.domain.HttpResponse;
 import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.dto.UserDTO;
+import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.form.LoginForm;
 import be.spiritualcenter.provider.TokenProvider;
 import be.spiritualcenter.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,13 +26,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.Authenticator;
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
+import static be.spiritualcenter.utils.ExceptionUtils.processError;
 import static java.time.LocalTime.now;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
 
@@ -41,14 +47,28 @@ public class UserResource {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
 
     //LOGIN
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
-        authenticationManager.authenticate(unauthenticated(loginForm.getUsername(), loginForm.getPassword()));
-        UserDTO user = userService.getUserByUsername(loginForm.getUsername());
+        Authentication authentication = authenticate(loginForm.getUsername(), loginForm.getPassword());
+        UserDTO user = getAuthenticatedUser(authentication);
         return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+    }
 
+    private UserDTO getAuthenticatedUser(Authentication authentication) {
+        return ((UserPrincipal) authentication.getPrincipal()).getUser();
+    }
+    private Authentication authenticate(String email, String password){
+        try {
+            Authentication authentication = authenticationManager.authenticate(unauthenticated(email, password));
+            return authentication;
+        } catch (Exception e){
+            processError(request, response, e);
+            throw new APIException(e.getMessage());
+        }
     }
         //LOGIN USER NO MFA
         private ResponseEntity<HttpResponse> sendResponse(UserDTO user) {
@@ -139,6 +159,48 @@ public class UserResource {
                         .reason("There is no mapping for a " + request.getMethod() + " request for this path on the server")
                         .status(BAD_REQUEST)
                         .statusCode(BAD_REQUEST.value())
+                        .build());
+    }
+
+
+    @GetMapping("/resetpassword/{email}")
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) {
+        userService.resetPassword(email);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Email sent. Please check your email to reset your password.")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+    @GetMapping("/verify/password/{key}")
+    public ResponseEntity<HttpResponse> verifyPasswordUrl(@PathVariable("key") String key) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
+        UserDTO user = userService.verifyPasswordKey(key);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user))
+                        .message("Please enter a new password")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+    @PostMapping("/resetpassword/{key}/{pass}/{confirmPass}")
+    public ResponseEntity<HttpResponse> resetPasswordWithKey(
+            @PathVariable("key") String key,
+            @PathVariable("pass") String pass,
+            @PathVariable("confirmPass") String confirmPass
+            ) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
+        userService.renewPassword(key, pass, confirmPass);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Pass has been reset")
+                        .status(OK)
+                        .statusCode(OK.value())
                         .build());
     }
 }

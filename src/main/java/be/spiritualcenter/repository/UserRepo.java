@@ -13,6 +13,7 @@ import java.util.Collection;
 public interface UserRepo <T extends User>{
     T create(T user);
     User getUserByUsername(String username);
+    User getUserByEmail(String email);
     Collection<T> list(int page, int pageSize);
     T get(Long id);
     T update(T data);
@@ -20,4 +21,10 @@ public interface UserRepo <T extends User>{
     void sendVerificationCode(UserDTO user);
 
     User verifyCode(String username, String code);
+
+    void resetPassword(String email);
+
+    User verifyPasswordKey(String key);
+
+    void renewPassword(String key, String pass, String confirmPass);
 }
