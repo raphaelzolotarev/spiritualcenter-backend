@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static be.spiritualcenter.utils.ExceptionUtils.processError;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -53,7 +54,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             filter.doFilter(request, response);
         } catch (Exception exception) {
             log.error(exception.getMessage());
-            //processError(request, response, exception);
+            processError(request, response, exception);
         }
 
     }
