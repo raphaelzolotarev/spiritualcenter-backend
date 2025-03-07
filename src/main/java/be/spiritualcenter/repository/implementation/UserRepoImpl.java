@@ -164,7 +164,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
 
     @Override
     public void renewPassword(String key, String password, String confirmPassword) {
-        if(!password.equals(confirmPassword)) throw new APIException("Passwords don't match. Please try again.");
+        if(!password.equals(confirmPassword) || isLinkExpired(key, PASSWORD)) throw new APIException("Passwords don't match. Please try again.");
         try {
             jdbc.update(UPDATE_USER_PASSWORD_BY_URL_QUERY, Map.of("password", encoder.encode(password), "url", getVerificationURL(key, PASSWORD.getType())));
             jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, Map.of("url", getVerificationURL(key, PASSWORD.getType())));
@@ -186,7 +186,9 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             throw new APIException("An error occurred. Please try again.");
         }
     }
-
+    private String getVerificationURL(String key, String type){
+        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type.toLowerCase() + "/" + key).toUriString();
+    }
     private Boolean isLinkExpired(String key, VerificationType password) {
         try {
             return jdbc.queryForObject(SELECT_EXPIRATION_BY_URL, Map.of("url", getVerificationURL(key, password.getType())), Boolean.class);
@@ -220,9 +222,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
                 .addValue("phone", user.getPhone())
                 .addValue("username", user.getUsername());
     }
-    private String getVerificationURL(String key, String type){
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type + "/" + key).toUriString();
-    }
+
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

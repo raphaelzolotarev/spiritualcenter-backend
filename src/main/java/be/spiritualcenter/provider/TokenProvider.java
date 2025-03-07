@@ -6,6 +6,7 @@ package be.spiritualcenter.provider;
  * @since 03/03/2025
  */
 
+import be.spiritualcenter.domain.User;
 import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.service.UserService;
@@ -31,6 +32,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static com.auth0.jwt.algorithms.Algorithm.HMAC512;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
@@ -69,7 +71,8 @@ public class TokenProvider {
         }
         // Creates an authentication object based on a token
         public Authentication getAuthentication(String username, List<GrantedAuthority> authorities, HttpServletRequest request) {
-            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserByUsername(username), null, authorities);
+            User user = toUser(userService.getUserByUsername(username));
+            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(new UserPrincipal(user, user.getRole()), null, authorities);
             userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             return userPasswordAuthToken;
         }

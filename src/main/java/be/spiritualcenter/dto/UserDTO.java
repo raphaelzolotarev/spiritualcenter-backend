@@ -26,4 +26,5 @@ public class UserDTO {
     private boolean isNotLocked;
     private boolean isUsingMfa;
     private Role role;
+
 }
