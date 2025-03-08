@@ -58,7 +58,7 @@ public class UserResource {
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
         Authentication authentication = authenticate(loginForm.getUsername(), loginForm.getPassword());
         UserDTO user = getAuthenticatedUser(authentication);
-        return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+            return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
     }
 
     private UserDTO getAuthenticatedUser(Authentication authentication) {
