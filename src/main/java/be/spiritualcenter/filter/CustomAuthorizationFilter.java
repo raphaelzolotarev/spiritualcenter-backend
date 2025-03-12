@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,9 +22,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+import static be.spiritualcenter.constants.Constants.*;
 import static be.spiritualcenter.utils.ExceptionUtils.processError;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -34,17 +33,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @RequiredArgsConstructor
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
-    private static final String TOKEN_PREFIX = "Bearer ";
-    private static final String[] PUBLIC_ROUTES = {
-            "/user/login",
-            "/user/register",
-            "/user/verify/code",
-            "/user/refresh/token",
-            "/user/image",
-            "/user/new/password"
-    };
     private final TokenProvider tokenProvider;
-    public static final String HTTP_OPTIONS_METHOD = "OPTIONS";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filter) throws ServletException, IOException {
@@ -68,8 +57,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return request.getHeader(AUTHORIZATION) == null || !request.getHeader(AUTHORIZATION).startsWith(TOKEN_PREFIX) ||
-                request.getMethod().equalsIgnoreCase(HTTP_OPTIONS_METHOD) || Arrays.asList(PUBLIC_ROUTES).contains(request.getRequestURI());
+        return request.getHeader(AUTHORIZATION) == null || !request.getHeader(AUTHORIZATION).startsWith(TOKEN_PREFIX) || request.getMethod().equalsIgnoreCase(HTTP_OPTIONS_METHOD) || Arrays.asList(PUBLIC_ROUTES).contains(request.getRequestURI());
     }
 
     private int getUserId(HttpServletRequest request) {
@@ -77,10 +65,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     }
 
 
-
     private String getToken(HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(AUTHORIZATION))
-                .filter(header -> header.startsWith(TOKEN_PREFIX))
-                .map(token -> token.replace(TOKEN_PREFIX, EMPTY)).get();
+        return Optional.ofNullable(request.getHeader(AUTHORIZATION)).filter(header -> header.startsWith(TOKEN_PREFIX)).map(token -> token.replace(TOKEN_PREFIX, EMPTY)).get();
     }
 }

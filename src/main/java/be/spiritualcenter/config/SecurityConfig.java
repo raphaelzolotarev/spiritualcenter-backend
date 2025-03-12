@@ -32,6 +32,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import static be.spiritualcenter.constants.Constants.PUBLIC_URLS;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.OPTIONS;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -47,17 +48,6 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final CustomAuthorizationFilter customAuthorizationFilter;
 
-    private static final String[] PUBLIC_URLS = {
-            "/user/login/**",
-            "/user/register/**",
-            "/user/verify/code/**",
-            "/user/resetpassword/**",
-            "/user/verify/password/**",
-            "/user/verify/account/**",
-            "/user/refresh/token/**",
-            "/user/image/**",
-            "/user/new/password/**"
-    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{

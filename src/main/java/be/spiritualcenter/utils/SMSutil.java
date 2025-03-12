@@ -6,21 +6,28 @@ package be.spiritualcenter.utils;
  * @since 03/03/2025
  */
 
-import be.spiritualcenter.passwords.MyTwilioCreds;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import static com.twilio.rest.api.v2010.account.Message.creator;
 
+@Component
 public class SMSutil {
-    public static final String FROM_NUMBER = MyTwilioCreds.FROM_NUMBER;
-    public static final String SID_KEY = MyTwilioCreds.SID_KEY;
-    public static final String TOKEN_KEY = MyTwilioCreds.TOKEN_KEY;
+    @Value("${mytwilio.FROM_NUMBER}")
+    public String FROM_NUMBER;
+    @Value("${mytwilio.SID_KEY}")
+    public String SID_KEY;
+    @Value("${mytwilio.TOKEN_KEY}")
+    public String TOKEN_KEY;
 
-    public static void sendSMS(String to, String messageBody) {
+    public void sendSMS(String to, String messageBody) {
         Twilio.init(SID_KEY, TOKEN_KEY);
         Message message = creator(new PhoneNumber("+32" + to.substring(1)), new PhoneNumber(FROM_NUMBER), messageBody).create();
         System.out.println(message);
     }
+
+
 }

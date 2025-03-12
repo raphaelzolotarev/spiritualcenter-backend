@@ -31,20 +31,16 @@ public class User {
     @Column(name = "user_id")
     private int id;
 
-    @NotEmpty(message = "Email cannot be empty")
     @Email(message = "Invalid email")
     @Column(name = "email")
     private String email;
 
-    @NotEmpty(message = "Password cannot be empty")
     @Column(name = "password")
     private String password;
 
-    @NotEmpty(message = "Username cannot be empty")
     @Column(name = "username")
     private String username;
 
-    @NotEmpty(message = "Phone cannot be empty")
     @Column(name = "phone")
     private String phone;
 

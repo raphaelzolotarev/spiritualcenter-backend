@@ -10,6 +10,7 @@ import be.spiritualcenter.form.UpdateForm;
 import be.spiritualcenter.repository.UserRepo;
 import be.spiritualcenter.rowmapper.UserRowMapper;
 import be.spiritualcenter.service.EmailService;
+import be.spiritualcenter.utils.SMSutil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -39,13 +40,13 @@ import java.util.concurrent.CompletableFuture;
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
 import static be.spiritualcenter.enums.VerificationType.PASSWORD;
 import static be.spiritualcenter.query.UserQuery.*;
-import static be.spiritualcenter.utils.SMSutil.sendSMS;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.time.DateFormatUtils.format;
 import static org.apache.commons.lang3.time.DateUtils.addDays;
+import static org.hibernate.type.descriptor.java.JdbcDateJavaType.DATE_FORMAT;
 import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath;
 
 /*
@@ -59,10 +60,10 @@ import static org.springframework.web.servlet.support.ServletUriComponentsBuilde
 @Slf4j
 public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
 
-    private static final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
     private final NamedParameterJdbcTemplate jdbc;
     private final BCryptPasswordEncoder encoder;
     private final EmailService emailService;
+    private final SMSutil smsUtil;
 
     @Override
     public User create(User user) {
@@ -124,12 +125,15 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
         try {
             jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID, Map.of("id", user.getId()));
             jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of("userId", user.getId(), "code", verificationCode, "expirationDate", expirationDate));
-            //sendSMS(user.getPhone(), "From: Spiritual Center \nVerification code\n" + verificationCode);
+            //sendSMSThread(user, verificationCode);
             log.info("Verification Code: {}", verificationCode);
         } catch (Exception exception) {
             log.error(exception.getMessage());
             throw new APIException("An error occurred. Please try again.");
         }
+    }
+    private void sendSMSThread(UserDTO user, String verificationCode) {
+        CompletableFuture.runAsync(() -> smsUtil.sendSMS(user.getPhone(), "From: Spiritual Center \nVerification code\n" + verificationCode));
     }
 
     @Override

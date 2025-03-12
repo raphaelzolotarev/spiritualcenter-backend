@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import static be.spiritualcenter.constants.Constants.*;
 import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static com.auth0.jwt.algorithms.Algorithm.HMAC512;
 import static java.lang.System.currentTimeMillis;
@@ -42,13 +43,6 @@ import static java.util.stream.Collectors.toList;
 @Component
 @RequiredArgsConstructor
 public class TokenProvider {
-    private static final String SPIRITUALCENTER = "SPIRITUALCENTER";
-    private static final String ALL_LOGGED_USERS = "ALL_LOGGED_USERS";
-    private static final String AUTHORITIES = "AUTHORITIES";
-    private static final long ACCESS_TOKEN_EXPIRATION_TIME = 1_000_000;
-    private static final long REFESH_TOKEN_EXPIRATION_TIME = 432_000_000;
-    private static final String TOKEN_CANNOT_BE_VERIFIED = "Token cannot be verified";
-
     @Value("${jwt.secret}")
     private String secret;
     private final UserService userService;

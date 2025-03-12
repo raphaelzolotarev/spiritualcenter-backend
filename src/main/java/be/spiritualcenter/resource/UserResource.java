@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import static be.spiritualcenter.constants.Constants.TOKEN_PREFIX;
 import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static be.spiritualcenter.utils.ExceptionUtils.processError;
 import static be.spiritualcenter.utils.UserUtils.getAuthenticatedUser;
@@ -59,7 +60,6 @@ public class UserResource {
     private final TokenProvider tokenProvider;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-    private static final String TOKEN_PREFIX = "Bearer ";
 
 
     //LOGIN
@@ -76,7 +76,7 @@ public class UserResource {
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(Map.of("user", user))
-                        .message("Profile Retrieved")
+                        .message("Welcome to your profile")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -101,7 +101,7 @@ public class UserResource {
                                     "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
                                     "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(user))
                             ))
-                            .message("Login successful")
+                            .message("Welcome "+user.getUsername())
                             .status(HttpStatus.OK)
                             .statusCode(HttpStatus.OK.value())
                             .build());
@@ -130,7 +130,7 @@ public class UserResource {
     //REGISTER
     @PostMapping("/register")
     public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(4);
+        //TimeUnit.SECONDS.sleep(4);
         UserDTO userDTO = userService.createUser(user);
         return ResponseEntity.created(getUri()).body(
                 HttpResponse.builder()
@@ -169,7 +169,7 @@ public class UserResource {
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(Map.of("user", updatedUser))
-                        .message("User updated")
+                        .message("Your profile is updated")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -204,7 +204,7 @@ public class UserResource {
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .message("Email sent. Please check your email to reset your password.")
+                        .message("Email sent. Please check your email (and spam) to reset your password.")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -319,7 +319,7 @@ public class UserResource {
                 HttpResponse.builder()
                         .data(Map.of("user", userService.getUserById(user.getId())))
                         .timeStamp(now().toString())
-                        .message("Profile image updated")
+                        .message("Your profile image is updated")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -330,26 +330,12 @@ public class UserResource {
         return Files.readAllBytes(Paths.get(System.getProperty("user.home") + "/Downloads/images/" + fileName));
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<HttpResponse> getCustomers(@AuthenticationPrincipal UserDTO user, @RequestParam Optional<Integer> page, @RequestParam Optional<Integer> size) {
-        return ResponseEntity.ok(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .data(Map.of("user", userService.getUserByUsername(user.getUsername()),
-                                "page", userService.getAllUsers(page.orElse(0), size.orElse(10))))
-                        .message("Users retrieved")
-                        .status(OK)
-                        .statusCode(OK.value())
-                        .build());
-    }
-
     @GetMapping("/numberusers")
     public ResponseEntity<HttpResponse> getNumberOfUsers() {
         return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(Map.of("nbr",  StreamSupport.stream(userService.getAllUsers().spliterator(), false).count() ))
-                        .message("Users retrieved")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -361,7 +347,7 @@ public class UserResource {
                         .timeStamp(now().toString())
                         .data(Map.of("user", userService.getUserByUsername(user.getUsername()),
                                 "page", userService.searchUsers(name.orElse(""), page.orElse(0), size.orElse(10))))
-                        .message("Customers retrieved")
+                        .message("Here are your search results")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
