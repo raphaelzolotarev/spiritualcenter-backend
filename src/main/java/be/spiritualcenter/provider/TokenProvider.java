@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static com.auth0.jwt.algorithms.Algorithm.HMAC512;
@@ -58,21 +59,20 @@ public class TokenProvider {
         // Access token: Issuer, audience, creation/expiration date, User object, permissions, token encryption
         public String createAccessToken(UserPrincipal userPrincipal) {
             return JWT.create().withIssuer(SPIRITUALCENTER).withAudience(ALL_LOGGED_USERS)
-                    .withIssuedAt(new Date()).withSubject(userPrincipal.getUsername()).withArrayClaim(AUTHORITIES, getClaimsFromUser(userPrincipal))
+                    .withIssuedAt(new Date()).withSubject(userPrincipal.getUser().getId()+"").withArrayClaim(AUTHORITIES, getClaimsFromUser(userPrincipal))
                     .withExpiresAt(new Date(currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_TIME))
                     .sign(HMAC512(secret.getBytes()));
         }
         // Refresh token: Used only to request a new one when the previous one expires
         public String createRefreshToken(UserPrincipal userPrincipal) {
             return JWT.create().withIssuer(SPIRITUALCENTER).withAudience(ALL_LOGGED_USERS)
-                    .withIssuedAt(new Date()).withSubject(userPrincipal.getUsername())
+                    .withIssuedAt(new Date()).withSubject(userPrincipal.getUser().getId()+"")
                     .withExpiresAt(new Date(currentTimeMillis() + REFESH_TOKEN_EXPIRATION_TIME))
                     .sign(HMAC512(secret.getBytes()));
         }
         // Creates an authentication object based on a token
-        public Authentication getAuthentication(String username, List<GrantedAuthority> authorities, HttpServletRequest request) {
-            User user = toUser(userService.getUserByUsername(username));
-            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(new UserPrincipal(user, user.getRole()), null, authorities);
+        public Authentication getAuthentication(int userId, List<GrantedAuthority> authorities, HttpServletRequest request) {
+            UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserById(userId), null, authorities);
             userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             return userPasswordAuthToken;
         }
@@ -98,9 +98,9 @@ public class TokenProvider {
 
     /**CHECK**/
         // Checks if a token is valid
-        public boolean isTokenValid(String username, String token) {
+        public boolean isTokenValid(int userId, String token) {
             JWTVerifier verifier = getJWTVerifier();
-            return StringUtils.isNoneEmpty(username) && !isTokenExpired(verifier, token);
+            return !Objects.isNull(userId) && !isTokenExpired(verifier, token);
         }
         // Checks if the token is expired
         private boolean isTokenExpired(JWTVerifier verifier, String token) {
@@ -117,10 +117,9 @@ public class TokenProvider {
             return verifier;
         }
         // Verifies the token and returns the user's identity
-        public String getSubject(String token, HttpServletRequest request) {
-            JWTVerifier verifier = getJWTVerifier();
+        public int getSubject(String token, HttpServletRequest request) {
             try {
-                return getJWTVerifier().verify(token).getSubject();
+                return Integer.valueOf(getJWTVerifier().verify(token).getSubject());
             } catch (TokenExpiredException exception) {
                 request.setAttribute("expiredMessage", exception.getMessage());
                 throw exception;

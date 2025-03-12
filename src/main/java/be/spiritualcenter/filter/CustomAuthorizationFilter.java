@@ -35,11 +35,13 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
     private static final String TOKEN_PREFIX = "Bearer ";
-    private static final String[] PUBLIC_ROUTES = {"" +
+    private static final String[] PUBLIC_ROUTES = {
             "/user/login",
             "/user/register",
             "/user/verify/code",
-            "/user/refresh/token"
+            "/user/refresh/token",
+            "/user/image",
+            "/user/new/password"
     };
     private final TokenProvider tokenProvider;
     public static final String HTTP_OPTIONS_METHOD = "OPTIONS";
@@ -48,7 +50,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filter) throws ServletException, IOException {
         try {
             String token = getToken(request);
-            String userId = getUserId(request);
+            int userId = getUserId(request);
             if (tokenProvider.isTokenValid(userId, token)) {
                 List<GrantedAuthority> authorities = tokenProvider.getAuthorities(token);
                 Authentication authentication = tokenProvider.getAuthentication(userId, authorities, request);
@@ -70,9 +72,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 request.getMethod().equalsIgnoreCase(HTTP_OPTIONS_METHOD) || Arrays.asList(PUBLIC_ROUTES).contains(request.getRequestURI());
     }
 
-    private String getUserId(HttpServletRequest request) {
+    private int getUserId(HttpServletRequest request) {
         return tokenProvider.getSubject(getToken(request), request);
     }
+
+
 
     private String getToken(HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(AUTHORIZATION))

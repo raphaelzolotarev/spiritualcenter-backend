@@ -54,7 +54,9 @@ public class SecurityConfig {
             "/user/resetpassword/**",
             "/user/verify/password/**",
             "/user/verify/account/**",
-            "/user/refresh/token/**"
+            "/user/refresh/token/**",
+            "/user/image/**",
+            "/user/new/password/**"
     };
 
     @Bean

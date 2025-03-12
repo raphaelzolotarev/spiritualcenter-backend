@@ -2,6 +2,10 @@ package be.spiritualcenter.service;
 
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.dto.UserDTO;
+import be.spiritualcenter.form.UpdateForm;
+import jakarta.validation.constraints.NotEmpty;
+import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.swing.*;
 
@@ -22,7 +26,21 @@ public interface UserService {
 
     UserDTO verifyPasswordKey(String key);
 
-    void renewPassword(String key, String pass, String confirmPass);
+    void updatePassword(int userId, String pass, String confirmPass);
 
     UserDTO verifyAccountKey(String key);
+    UserDTO updateUserDetails(UpdateForm user);
+
+    UserDTO getUserById(int userId);
+
+    void updatePassword(int userId, String currentPassword, String newPassword, String confirmNewPassword);
+    void updateAccountSettings(int userId, Boolean enabled, Boolean notLocked);
+    UserDTO toggleMfa(String email);
+    void updateImage(UserDTO user, MultipartFile image);
+
+    Page<User> getAllUsers(int page, int size);
+    Iterable<User> getAllUsers();
+    Page<User> searchUsers(String name, int page, int size);
+
+
 }

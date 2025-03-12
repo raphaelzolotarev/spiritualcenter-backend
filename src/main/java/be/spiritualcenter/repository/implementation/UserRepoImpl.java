@@ -6,8 +6,10 @@ import be.spiritualcenter.enums.VerificationType;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.domain.User;
+import be.spiritualcenter.form.UpdateForm;
 import be.spiritualcenter.repository.UserRepo;
 import be.spiritualcenter.rowmapper.UserRowMapper;
+import be.spiritualcenter.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -21,21 +23,30 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
 import static be.spiritualcenter.enums.VerificationType.PASSWORD;
 import static be.spiritualcenter.query.UserQuery.*;
 import static be.spiritualcenter.utils.SMSutil.sendSMS;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.time.DateFormatUtils.format;
 import static org.apache.commons.lang3.time.DateUtils.addDays;
+import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath;
 
 /*
  * @author Raphael Zolotarev
@@ -51,6 +62,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     private static final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
     private final NamedParameterJdbcTemplate jdbc;
     private final BCryptPasswordEncoder encoder;
+    private final EmailService emailService;
 
     @Override
     public User create(User user) {
@@ -63,7 +75,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             user.setRole(Role.USER);
             String verificationURL = getVerificationURL(UUID.randomUUID().toString(), ACCOUNT.getType());
             jdbc.update(INSERT_ACCOUNT_VERIFICATION_URL_QUERY, Map.of("userId",user.getId(), "url", verificationURL));
-            //emailService.sendVerificationUrl(user.getUsername(), user.getEmail(), verificationURL, ACCOUNT);
+            sendEmail(user.getUsername(), user.getEmail(), verificationURL, ACCOUNT);
             user.setEnabled(false);
             user.setNotLocked(true);
             return user;
@@ -74,7 +86,9 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
 
-
+    private void sendEmail(String firstName, String email, String verificationUrl, VerificationType verificationType) {
+        CompletableFuture.runAsync(() -> emailService.sendVerificationEmail(firstName, email, verificationUrl, verificationType));
+    }
 
     @Override
     public Collection<User> list(int page, int pageSize) {
@@ -82,8 +96,15 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     @Override
-    public User get(Long id) {
-        return null;
+    public User get(int id) {
+        try {
+            return jdbc.queryForObject(SELECT_USER_BY_ID_QUERY, Map.of("id", id), new UserRowMapper());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new APIException("No User found by id: " + id);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
     }
 
     @Override
@@ -92,7 +113,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     @Override
-    public Boolean delete(Long id) {
+    public Boolean delete(int id) {
         return null;
     }
 
@@ -139,7 +160,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             String verificationUrl = getVerificationURL(UUID.randomUUID().toString(), PASSWORD.getType());
             jdbc.update(DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY, Map.of("userId",  user.getId()));
             jdbc.update(INSERT_PASSWORD_VERIFICATION_QUERY, Map.of("userId",  user.getId(), "url", verificationUrl, "expirationDate", expirationDate));
-            //sendEmail(user.getFirstName(), username, verificationUrl, PASSWORD);
+            sendEmail(user.getUsername(), user.getEmail(), verificationUrl, PASSWORD);
             log.info("Verification URL: {}", verificationUrl);
         } catch (Exception exception) {
             throw new APIException("An error occurred. Please try again.");
@@ -175,6 +196,18 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     @Override
+    public void renewPassword(int userId, String password, String confirmPassword) {
+        if(!password.equals(confirmPassword)) throw new APIException("Passwords don't match. Please try again.");
+        try {
+            jdbc.update(UPDATE_USER_PASSWORD_BY_USER_ID_QUERY, Map.of("id", userId, "password", encoder.encode(password)));
+            //jdbc.update(DELETE_PASSWORD_VERIFICATION_BY_USER_ID_QUERY, of("userId", userId));
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
     public User verifyAccountKey(String key) {
         try {
             User user = jdbc.queryForObject(SELECT_USER_BY_ACCOUNT_URL_QUERY, Map.of("url", getVerificationURL(key, ACCOUNT.getType())), new UserRowMapper());
@@ -186,8 +219,37 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             throw new APIException("An error occurred. Please try again.");
         }
     }
+
+    @Override
+    public User updateUserDetails(UpdateForm user) {
+        try {
+            jdbc.update(UPDATE_USER_DETAILS_QUERY, getUserDetailsSqlParameterSource(user));
+            return get(user.getId());
+        }catch (EmptyResultDataAccessException exception) {
+            throw new APIException("No User found by id: " + user.getId());
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public void updatePassword(int id, String currentPassword, String newPassword, String confirmNewPassword) {
+        if(!newPassword.equals(confirmNewPassword)) { throw new APIException("Passwords don't match. Please try again."); }
+        User user = get(id);
+        if(encoder.matches(currentPassword, user.getPassword())) {
+            try {
+                jdbc.update(UPDATE_USER_PASSWORD_BY_ID_QUERY, Map.of("userId", id, "password", encoder.encode(newPassword)));
+            }  catch (Exception exception) {
+                throw new APIException("An error occurred. Please try again.");
+            }
+        } else {
+            throw new APIException("Incorrect current password. Please try again.");
+        }
+    }
+
     private String getVerificationURL(String key, String type){
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type.toLowerCase() + "/" + key).toUriString();
+        return fromCurrentContextPath().path("/user/verify/" + type.toLowerCase() + "/" + key).toUriString();
     }
     private Boolean isLinkExpired(String key, VerificationType password) {
         try {
@@ -222,7 +284,13 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
                 .addValue("phone", user.getPhone())
                 .addValue("username", user.getUsername());
     }
-
+    private SqlParameterSource getUserDetailsSqlParameterSource(UpdateForm user) {
+        return new MapSqlParameterSource()
+                .addValue("id", user.getId())
+                .addValue("username", user.getUsername())
+                .addValue("email", user.getEmail())
+                .addValue("phone", user.getPhone());
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -259,6 +327,64 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             log.error(e.getMessage());
             throw new APIException("An error occurred.");
         }
+    }
+    @Override
+    public void updateAccountSettings(int userId, Boolean enabled, Boolean notLocked) {
+        try {
+            jdbc.update(UPDATE_USER_SETTINGS_QUERY, Map.of("userId", userId, "enabled", enabled, "notLocked", notLocked));
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public User toggleMfa(String email) {
+        User user = getUserByEmail(email);
+        if(isBlank(user.getPhone())) { throw new APIException("You need a phone number to change Multi-Factor Authentication"); }
+        user.setUsingMfa(!user.isUsingMfa());
+        try {
+            jdbc.update(TOGGLE_USER_MFA_QUERY, Map.of("email", email, "isUsingMfa", user.isUsingMfa()));
+            return user;
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new APIException("Unable to update Multi-Factor Authentication");
+        }
+    }
+
+
+    /**IMAGE**/
+    @Override
+    public void updateImage(UserDTO user, MultipartFile image) {
+        String userImageUrl = setUserImageUrl(user.getEmail());
+        user.setPicture(userImageUrl);
+        saveImage(user.getEmail(), image);
+        jdbc.update(UPDATE_USER_IMAGE_QUERY, Map.of("imageUrl", userImageUrl, "id", user.getId()));
+
+    }
+
+    private String setUserImageUrl(String email) {
+        return fromCurrentContextPath().path("/user/image/" + email + ".png").toUriString();
+    }
+
+    private void saveImage(String email, MultipartFile image) {
+        Path fileStorageLocation = Paths.get(System.getProperty("user.home") + "/Downloads/images/").toAbsolutePath().normalize();
+        if(!Files.exists(fileStorageLocation)) {
+            try {
+                Files.createDirectories(fileStorageLocation);
+            } catch (Exception exception) {
+                log.error(exception.getMessage());
+                throw new APIException("Unable to create directories to save image");
+            }
+            log.info("Created directories: {}", fileStorageLocation);
+        }
+        try {
+            Files.copy(image.getInputStream(), fileStorageLocation.resolve(email + ".png"), REPLACE_EXISTING);
+        } catch (IOException exception) {
+            log.error(exception.getMessage());
+            throw new APIException(exception.getMessage());
+        }
+        log.info("File saved in: {} folder", fileStorageLocation);
     }
 }
 

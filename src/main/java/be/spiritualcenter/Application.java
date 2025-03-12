@@ -13,7 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+@SpringBootApplication
 public class Application {
 	private final static int STRENGTH = 12;
 

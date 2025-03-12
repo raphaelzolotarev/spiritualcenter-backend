@@ -11,7 +11,7 @@ import be.spiritualcenter.domain.HttpResponse;
 import be.spiritualcenter.domain.UserPrincipal;
 import be.spiritualcenter.dto.UserDTO;
 import be.spiritualcenter.exception.APIException;
-import be.spiritualcenter.form.LoginForm;
+import be.spiritualcenter.form.*;
 import be.spiritualcenter.provider.TokenProvider;
 import be.spiritualcenter.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,20 +23,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.Authenticator;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static be.spiritualcenter.utils.ExceptionUtils.processError;
+import static be.spiritualcenter.utils.UserUtils.getAuthenticatedUser;
+import static be.spiritualcenter.utils.UserUtils.getLoggedInUser;
 import static java.time.LocalTime.now;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
@@ -57,19 +66,28 @@ public class UserResource {
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
         Authentication authentication = authenticate(loginForm.getUsername(), loginForm.getPassword());
-        UserDTO user = getAuthenticatedUser(authentication);
-            return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+        UserDTO user = getLoggedInUser(authentication);
+        return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
+    }
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> profile(Authentication authentication) {
+        UserDTO user = userService.getUserByUsername(getAuthenticatedUser(authentication).getUsername());
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", user))
+                        .message("Profile Retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
     }
 
-    private UserDTO getAuthenticatedUser(Authentication authentication) {
-        return ((UserPrincipal) authentication.getPrincipal()).getUser();
-    }
-    private Authentication authenticate(String email, String password){
+    private Authentication authenticate(String username, String password){
         try {
-            Authentication authentication = authenticationManager.authenticate(unauthenticated(email, password));
+            Authentication authentication = authenticationManager.authenticate(unauthenticated(username, password));
             return authentication;
         } catch (Exception e){
-            processError(request, response, e);
+            //processError(request, response, e);
             throw new APIException(e.getMessage());
         }
     }
@@ -111,29 +129,19 @@ public class UserResource {
 
     //REGISTER
     @PostMapping("/register")
-    public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user){
+    public ResponseEntity<HttpResponse> saveUser(@RequestBody @Valid User user) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(4);
         UserDTO userDTO = userService.createUser(user);
         return ResponseEntity.created(getUri()).body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
                         .data(Map.of("user", userDTO))
-                        .message("User created")
+                        .message(String.format("User account created for user %s", user.getUsername()))
                         .status(HttpStatus.CREATED)
                         .statusCode(HttpStatus.CREATED.value())
                         .build());
     }
-    @GetMapping("/profile")
-    public ResponseEntity<HttpResponse> profile(Authentication authentication) {
-        UserDTO user = userService.getUserByUsername( authentication.getName()   );
-        return ResponseEntity.ok().body(
-                HttpResponse.builder()
-                        .timeStamp(now().toString())
-                        .data(Map.of("user", user))
-                        .message("Profile Retrieved")
-                        .status(OK)
-                        .statusCode(OK.value())
-                        .build());
-    }
+
 
     @GetMapping("/verify/code/{username}/{code}")
     public ResponseEntity<HttpResponse> verifyCode(@PathVariable("username") String username, @PathVariable("code") String code){
@@ -153,7 +161,31 @@ public class UserResource {
         return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/get/<userId>").toUriString());
     }
 
-
+    @PatchMapping("/update")
+    public ResponseEntity<HttpResponse> updateUser(@RequestBody @Valid UpdateForm user) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
+        UserDTO updatedUser = userService.updateUserDetails(user);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", updatedUser))
+                        .message("User updated")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+    @PatchMapping("/update/password")
+    public ResponseEntity<HttpResponse> updatePassword(Authentication authentication, @RequestBody @Valid UpdatePasswordForm form) {
+        UserDTO userDTO = getAuthenticatedUser(authentication);
+        userService.updatePassword(userDTO.getId(), form.getCurrentPassword(), form.getNewPassword(), form.getConfirmNewPassword());
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Password updated successfully")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
     @RequestMapping("/error")
     public ResponseEntity<HttpResponse> handleError(HttpServletRequest request) {
         return ResponseEntity.badRequest().body(
@@ -190,18 +222,14 @@ public class UserResource {
                         .statusCode(OK.value())
                         .build());
     }
-    @PostMapping("/resetpassword/{key}/{pass}/{confirmPass}")
-    public ResponseEntity<HttpResponse> resetPasswordWithKey(
-            @PathVariable("key") String key,
-            @PathVariable("pass") String pass,
-            @PathVariable("confirmPass") String confirmPass
-            ) throws InterruptedException {
+    @PutMapping("/new/password")
+    public ResponseEntity<HttpResponse> resetPasswordWithKey(@RequestBody @Valid NewPasswordForm form) throws InterruptedException {
         TimeUnit.SECONDS.sleep(3);
-        userService.renewPassword(key, pass, confirmPass);
+        userService.updatePassword(form.getUserId(), form.getPassword(), form.getConfirmPassword());
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .message("Pass has been reset")
+                        .message("Password reset successfully")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
@@ -209,6 +237,7 @@ public class UserResource {
 
     @GetMapping("/verify/account/{key}")
     public ResponseEntity<HttpResponse> verifyAccount(@PathVariable("key") String key) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
@@ -222,7 +251,7 @@ public class UserResource {
     public ResponseEntity<HttpResponse> refreshToken(HttpServletRequest request)  {
         if(isHeaderAndTokenValid(request)){
             String token = request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length());
-            UserDTO user = userService.getUserByUsername(tokenProvider.getSubject(token, request));
+            UserDTO user = userService.getUserById(tokenProvider.getSubject(token, request));
             return ResponseEntity.ok().body(
                     HttpResponse.builder()
                             .timeStamp(now().toString())
@@ -252,8 +281,93 @@ public class UserResource {
                         tokenProvider.getSubject(request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length()), request),
                         request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length()));
     }
+    @PatchMapping("/update/settings")
+    public ResponseEntity<HttpResponse> updateAccountSettings(Authentication authentication, @RequestBody @Valid SettingsForm form) {
+        UserDTO userDTO = getAuthenticatedUser(authentication);
+        userService.updateAccountSettings(userDTO.getId(), form.getEnabled(), form.getNotLocked());
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .data(Map.of("user", userService.getUserById(userDTO.getId())))
+                        .timeStamp(now().toString())
+                        .message("Account settings updated successfully")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
 
+
+
+    @PatchMapping("/togglemfa")
+    public ResponseEntity<HttpResponse> toggleMfa(Authentication authentication) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(3);
+        UserDTO user = userService.toggleMfa(getAuthenticatedUser(authentication).getEmail());
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .data(Map.of("user", user))
+                        .timeStamp(now().toString())
+                        .message("Multi-Factor Authentication updated")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @PatchMapping("/update/image")
+    public ResponseEntity<HttpResponse> updateProfileImage(Authentication authentication, @RequestParam("image") MultipartFile image) throws InterruptedException {
+        UserDTO user = getAuthenticatedUser(authentication);
+        userService.updateImage(user, image);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .data(Map.of("user", userService.getUserById(user.getId())))
+                        .timeStamp(now().toString())
+                        .message("Profile image updated")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping(value = "/image/{fileName}", produces = IMAGE_PNG_VALUE)
+    public byte[] getProfileImage(@PathVariable("fileName") String fileName) throws Exception {
+        return Files.readAllBytes(Paths.get(System.getProperty("user.home") + "/Downloads/images/" + fileName));
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<HttpResponse> getCustomers(@AuthenticationPrincipal UserDTO user, @RequestParam Optional<Integer> page, @RequestParam Optional<Integer> size) {
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", userService.getUserByUsername(user.getUsername()),
+                                "page", userService.getAllUsers(page.orElse(0), size.orElse(10))))
+                        .message("Users retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping("/numberusers")
+    public ResponseEntity<HttpResponse> getNumberOfUsers() {
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("nbr",  StreamSupport.stream(userService.getAllUsers().spliterator(), false).count() ))
+                        .message("Users retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+    @GetMapping("/search")
+    public ResponseEntity<HttpResponse> searchCustomer(@AuthenticationPrincipal UserDTO user, Optional<String> name, @RequestParam Optional<Integer> page, @RequestParam Optional<Integer> size) throws InterruptedException {
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(Map.of("user", userService.getUserByUsername(user.getUsername()),
+                                "page", userService.searchUsers(name.orElse(""), page.orElse(0), size.orElse(10))))
+                        .message("Customers retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
 }
+
 
 
 
