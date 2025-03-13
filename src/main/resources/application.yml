@@ -1,30 +1,40 @@
+jwt:
+  secret: ${JWT_SECRET}
+
+server:
+  error:
+    path: /user/error
+    whitelabel:
+      enabled: false
+  port: ${CONTAINER_PORT:8080}
+
 spring:
   profiles:
     active: ${ACTIVE_PROFILE:dev}
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
     password: ${MYSQL_PASSWORD}
     username: ${MYSQL_USERNAME}
   jpa:
-    database-platform: org.hibernate.dialect.MySQL8InnoDBDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     generate-ddl: true
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
-        globally_quoted_indentifiers: true
+        globally_quoted_identifiers: true
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
   sql:
     init:
-      mode: never
+      mode: always
       continue-on-error: false
   mail:
     host: ${EMAIL_HOST}
     port: ${EMAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${EMAIL_ID}
+    password: ${EMAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -37,24 +47,16 @@ spring:
             required: true
     verify:
       host: ${VERIFY_EMAIL_HOST}
+
 ui:
   app:
     url: ${UI_APP_URL}
+
 application:
   title: Spiritual Center
   version: 1.0
 
-jwt:
-  secret: ${JWT_SECRET}
-
-server:
-  error:
-    path: /user/error
-    whitelabel:
-      enabled: false
-  port: ${CONTAINER_PORT:8080}
-
 mytwilio:
-  FROM_NUMBER: ${FROM_NUMBER}
-  SID_KEY: ${SID_KEY}
-  TOKEN_KEY: ${TOKEN_KEY}
+  FROM_NUMBER: ${SECRET_FROM_NUMBER}
+  SID_KEY: ${SECRET_SID_KEY}
+  TOKEN_KEY: ${SECRET_TOKEN_KEY}
