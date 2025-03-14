@@ -12,11 +12,11 @@ spring:
   profiles:
     active: ${ACTIVE_PROFILE:prod}
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
-    password: ${MYSQL_PASSWORD}
-    username: ${MYSQL_USERNAME}
+    url: jdbc:${DB_TYPE}://${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME}
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.${DB_DIALECT}
     generate-ddl: true
     show-sql: true
     hibernate:
@@ -24,11 +24,11 @@ spring:
     properties:
       hibernate:
         globally_quoted_identifiers: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.${DB_DIALECT}
         format_sql: true
   sql:
     init:
-      mode: always
+      mode: never
       continue-on-error: false
   mail:
     host: ${EMAIL_HOST}
