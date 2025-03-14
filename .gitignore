@@ -32,15 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-src/main/resources/config.yml
+### Mine ###
 src/main/resources/application-dev.yml
 src/main/resources/application-prod.yml
-src/main/resources/application-test.yml
-src/main/java/be/spiritualcenter/spiritualcenter.zip
-
-.env
 .env.dev
 .env.prod
-.env.test
-
-
