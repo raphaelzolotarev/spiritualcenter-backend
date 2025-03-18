@@ -14,8 +14,12 @@ import be.spiritualcenter.repository.UserRepo;
 import be.spiritualcenter.repository.UserRepoJpa;
 import be.spiritualcenter.repository.implementation.UserRepoImpl;
 import be.spiritualcenter.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +28,7 @@ import static org.springframework.data.domain.PageRequest.of;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepo<User> userRepo;
     private final UserRepoJpa userRepoJpa;
@@ -110,7 +115,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<User> searchUsers(String name, int page, int size) {
-        return userRepoJpa.findByUsernameContaining(name, of(page, size));
+    public Page<User> searchUsers(String name, int page, int size, String type, String order) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(order.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, type));
+        return userRepoJpa.findByUsernameContaining(name, pageable);
     }
 }

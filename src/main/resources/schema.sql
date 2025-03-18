@@ -17,16 +17,15 @@ CREATE TABLE IF NOT EXISTS User (
                       role ENUM('USER', 'ADMIN') NOT NULL
 
 );
+CREATE TABLE IF NOT EXISTS posts (
+                                    id INT PRIMARY KEY AUTO_INCREMENT,
+                                    title VARCHAR(255) NOT NULL,
+                                    content MEDIUMTEXT NOT NULL,
+                                    date DATETIME(6) NOT NULL
 
-CREATE TABLE IF NOT EXISTS BlogArticle (
-                             article_id INT PRIMARY KEY AUTO_INCREMENT,
-                             title VARCHAR(255) NOT NULL,
-                             creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                             cover_image VARCHAR(255),
-                             description TEXT,
-                             author_id INT NOT NULL,
-                             FOREIGN KEY (author_id) REFERENCES User(user_id) ON DELETE CASCADE
 );
+
+
 CREATE TABLE IF NOT EXISTS AccountVerification (
                       id INT PRIMARY KEY AUTO_INCREMENT,
                       user_id INT NOT NULL,

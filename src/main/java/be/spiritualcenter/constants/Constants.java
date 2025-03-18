@@ -10,23 +10,23 @@ package be.spiritualcenter.constants;
 
 public class Constants {
     public static final String[] PUBLIC_URLS = {
-            "/user/login/**",
-            "/user/register/**",
-            "/user/verify/code/**",
-            "/user/resetpassword/**",
-            "/user/verify/password/**",
-            "/user/verify/account/**",
-            "/user/refresh/token/**",
-            "/user/image/**",
-            "/user/new/password/**"
+            "/api/user/login/**",
+            "/api/user/register/**",
+            "/api/user/verify/code/**",
+            "/api/user/resetpassword/**",
+            "/api/user/verify/password/**",
+            "/api/user/verify/account/**",
+            "/api/user/refresh/token/**",
+            "/api/user/image/**",
+            "/api/user/new/password/**"
     };
     public static final String[] PUBLIC_ROUTES = {
-            "/user/login",
-            "/user/register",
-            "/user/verify/code",
-            "/user/refresh/token",
-            "/user/image",
-            "/user/new/password"
+            "/api/user/login",
+            "/api/user/register",
+            "/api/user/verify/code",
+            "/api/user/refresh/token",
+            "/api/user/image",
+            "/api/user/new/password"
     };
     public static final String TOKEN_PREFIX = "Bearer ";
     public static final String HTTP_OPTIONS_METHOD = "OPTIONS";

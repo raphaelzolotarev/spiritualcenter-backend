@@ -8,6 +8,7 @@ import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.form.UpdateForm;
 import be.spiritualcenter.repository.UserRepo;
+import be.spiritualcenter.repository.UserRepoJpa;
 import be.spiritualcenter.rowmapper.UserRowMapper;
 import be.spiritualcenter.service.EmailService;
 import be.spiritualcenter.utils.SMSutil;
@@ -64,10 +65,14 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     private final BCryptPasswordEncoder encoder;
     private final EmailService emailService;
     private final SMSutil smsUtil;
+    private final UserRepoJpa userRepoJpa;
 
     @Override
     public User create(User user) {
         if (getEmailCount(user.getEmail().trim().toLowerCase())>0) throw new APIException("Email already exists");
+        if (userRepoJpa.findAll().size()>=100) throw new APIException("Maximum 100 users reached");
+        if (userRepoJpa.findUserByPhone(user.getPhone())) throw new APIException("Phone already exists");
+        if (userRepoJpa.findUserByUsername(user.getUsername())) throw new APIException("Username already exists");
         try{
             KeyHolder holder = new GeneratedKeyHolder();
             SqlParameterSource params = getSqlParameterSource(user);
@@ -227,6 +232,11 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     @Override
     public User updateUserDetails(UpdateForm user) {
         try {
+            if (userRepoJpa.findAll().size()>=100) throw new APIException("Maximum 100 users reached");
+            if (userRepoJpa.getUserByUsername(user.getUsername()).size() > 0 && userRepoJpa.getUserByUsername(user.getUsername()).get(0).getId() != user.getId()) throw new APIException("Username already exists");
+            if (userRepoJpa.getUserByPhone(user.getPhone()).size() > 0 && userRepoJpa.getUserByPhone(user.getPhone()).stream().anyMatch(u -> ((User)u).getId() != user.getId() )) throw new APIException("Phone already exists");
+            if (userRepoJpa.getUserByEmail(user.getEmail()).size() > 0 && userRepoJpa.getUserByEmail(user.getEmail()).stream().anyMatch(u -> ((User)u).getId() != user.getId() )) throw new APIException("Email already exists");
+
             jdbc.update(UPDATE_USER_DETAILS_QUERY, getUserDetailsSqlParameterSource(user));
             return get(user.getId());
         }catch (EmptyResultDataAccessException exception) {
@@ -360,19 +370,26 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     /**IMAGE**/
     @Override
     public void updateImage(UserDTO user, MultipartFile image) {
-        String userImageUrl = setUserImageUrl(user.getEmail());
-        user.setPicture(userImageUrl);
-        saveImage(user.getEmail(), image);
-        jdbc.update(UPDATE_USER_IMAGE_QUERY, Map.of("imageUrl", userImageUrl, "id", user.getId()));
-
+        if(image.getSize() > 2_000_000){
+            throw new APIException("You need a small image to update your profile");
+        }
+        if(image.getContentType().equals("image/jpeg") || image.getContentType().equals("image/png")){
+            String userImageUrl = setUserImageUrl(user.getEmail());
+            user.setPicture(userImageUrl);
+            saveImage(user.getEmail(), image);
+            jdbc.update(UPDATE_USER_IMAGE_QUERY, Map.of("imageUrl", userImageUrl, "id", user.getId()));
+        } else {
+            throw new APIException("Only Jpeg and Png image are supported");
+        }
     }
 
     private String setUserImageUrl(String email) {
-        return fromCurrentContextPath().path("/user/image/" + email + ".png").toUriString();
+        return fromCurrentContextPath().path("/api/user/image/" + email + ".png").toUriString();
     }
 
     private void saveImage(String email, MultipartFile image) {
         Path fileStorageLocation = Paths.get(System.getProperty("user.home") + "/Downloads/images/").toAbsolutePath().normalize();
+        //Path fileStorageLocation = Paths.get("/var/www/spiritualcenter/images/").toAbsolutePath().normalize();
         if(!Files.exists(fileStorageLocation)) {
             try {
                 Files.createDirectories(fileStorageLocation);

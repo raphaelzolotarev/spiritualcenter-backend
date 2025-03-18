@@ -40,7 +40,7 @@ public interface UserService {
 
     Page<User> getAllUsers(int page, int size);
     Iterable<User> getAllUsers();
-    Page<User> searchUsers(String name, int page, int size);
+    Page<User> searchUsers(String name, int page, int size, String type, String order);
 
 
 }

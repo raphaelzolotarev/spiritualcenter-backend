@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,9 +33,11 @@ import java.net.Authenticator;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static be.spiritualcenter.constants.Constants.TOKEN_PREFIX;
@@ -50,9 +53,8 @@ import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
-
 @RestController
-@RequestMapping(path = "/user")
+@RequestMapping(path = "/api/user")
 @RequiredArgsConstructor
 public class UserResource {
     private final UserService userService;
@@ -60,7 +62,6 @@ public class UserResource {
     private final TokenProvider tokenProvider;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-
 
     //LOGIN
     @PostMapping("/login")
@@ -328,6 +329,7 @@ public class UserResource {
     @GetMapping(value = "/image/{fileName}", produces = IMAGE_PNG_VALUE)
     public byte[] getProfileImage(@PathVariable("fileName") String fileName) throws Exception {
         return Files.readAllBytes(Paths.get(System.getProperty("user.home") + "/Downloads/images/" + fileName));
+        //return Files.readAllBytes(Paths.get("/var/www/spiritualcenter/images/" + fileName));
     }
 
     @GetMapping("/numberusers")
@@ -341,13 +343,36 @@ public class UserResource {
                         .build());
     }
     @GetMapping("/search")
-    public ResponseEntity<HttpResponse> searchCustomer(@AuthenticationPrincipal UserDTO user, Optional<String> name, @RequestParam Optional<Integer> page, @RequestParam Optional<Integer> size) throws InterruptedException {
+    public ResponseEntity<HttpResponse> searchCustomer(@AuthenticationPrincipal UserDTO user, @RequestParam Optional<String> name, @RequestParam Optional<Integer> page, @RequestParam Optional<String> type, @RequestParam Optional<String> order, @RequestParam Optional<Integer> size) throws InterruptedException {
+
         return ResponseEntity.ok(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(Map.of("user", userService.getUserByUsername(user.getUsername()),
-                                "page", userService.searchUsers(name.orElse(""), page.orElse(0), size.orElse(10))))
+                        .data(
+                                Map.of(
+                                        "user", userService.getUserByUsername(user.getUsername()),
+                                        "page", userService.searchUsers(name.orElse(""), page.orElse(0), size.orElse(10), type.orElse("id"), order.orElse("asc"))
+                                )
+                        )
                         .message("Here are your search results")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping("/finduser/{id}")
+    public ResponseEntity<HttpResponse> searchCustomer(@AuthenticationPrincipal UserDTO user, @PathVariable int id) throws InterruptedException {
+
+        return ResponseEntity.ok(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(
+                                Map.of(
+                                        "user", userService.getUserByUsername(user.getUsername()),
+                                        "userdetails", userService.getUserById(id)
+                                )
+                        )
+                        .message("User details")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());

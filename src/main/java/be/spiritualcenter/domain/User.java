@@ -25,6 +25,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @Entity
+@Table(name = "user")
 public class User {
     @Id
     @GeneratedValue(strategy = IDENTITY)

@@ -94,7 +94,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
 	</dependencies>
 
 	<profiles>
@@ -113,6 +112,7 @@
 	</profiles>
 
 	<build>
+		<finalName>spiritualcenter</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

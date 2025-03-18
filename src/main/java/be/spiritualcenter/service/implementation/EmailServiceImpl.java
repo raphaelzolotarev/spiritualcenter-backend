@@ -11,6 +11,7 @@ package be.spiritualcenter.service.implementation;
 import be.spiritualcenter.enums.VerificationType;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.service.EmailService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 @Slf4j
+@Transactional
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
 

@@ -6,12 +6,20 @@ server:
     path: /user/error
     whitelabel:
       enabled: false
+  address: 0.0.0.0
   port: ${CONTAINER_PORT:8080}
+  forward-headers-strategy: NATIVE
 
 spring:
   profiles:
-    active: ${ACTIVE_PROFILE:prod}
+    active: ${ACTIVE_PROFILE:dev}
   datasource:
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
     url: jdbc:${DB_TYPE}://${DB_HOST}:${DB_PORT}/${DB_DATABASE}
     password: ${DB_PASSWORD}
     username: ${DB_USERNAME}
@@ -26,6 +34,7 @@ spring:
         globally_quoted_identifiers: true
         dialect: org.hibernate.dialect.${DB_DIALECT}
         format_sql: true
+    open-in-view: true
   sql:
     init:
       mode: never
