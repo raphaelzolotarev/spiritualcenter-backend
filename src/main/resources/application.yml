@@ -7,12 +7,12 @@ server:
     whitelabel:
       enabled: false
   address: 0.0.0.0
-  port: ${CONTAINER_PORT:8080}
+  port: 8080
   forward-headers-strategy: NATIVE
 
 spring:
   profiles:
-    active: ${ACTIVE_PROFILE:dev}
+    active: prod
   datasource:
     hikari:
       connection-timeout: 30000
@@ -56,14 +56,6 @@ spring:
             required: true
     verify:
       host: ${VERIFY_EMAIL_HOST}
-
-ui:
-  app:
-    url: ${UI_APP_URL}
-
-application:
-  title: Spiritual Center
-  version: 1.0
 
 mytwilio:
   FROM_NUMBER: ${SECRET_FROM_NUMBER}
