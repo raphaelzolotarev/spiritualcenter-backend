@@ -360,8 +360,8 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     private void saveImage(String email, MultipartFile image) {
-        Path fileStorageLocation = Paths.get(System.getProperty("user.home") + "/Downloads/images/").toAbsolutePath().normalize();
-        //Path fileStorageLocation = Paths.get("/var/www/spiritualcenter/images/").toAbsolutePath().normalize();
+        //Path fileStorageLocation = Paths.get(System.getProperty("user.home") + "/Downloads/images/").toAbsolutePath().normalize();
+        Path fileStorageLocation = Paths.get("/var/www/spiritualcenter/images/").toAbsolutePath().normalize();
         if(!Files.exists(fileStorageLocation)) {
             try {
                 Files.createDirectories(fileStorageLocation);

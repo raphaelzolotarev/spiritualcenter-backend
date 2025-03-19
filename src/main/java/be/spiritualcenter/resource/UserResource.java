@@ -334,8 +334,8 @@ public class UserResource {
 
     @GetMapping(value = "/image/{fileName}", produces = IMAGE_PNG_VALUE)
     public byte[] getProfileImage(@PathVariable("fileName") String fileName) throws Exception {
-        return Files.readAllBytes(Paths.get(System.getProperty("user.home") + "/Downloads/images/" + fileName));
-        //return Files.readAllBytes(Paths.get("/var/www/spiritualcenter/images/" + fileName));
+        return Files.readAllBytes(Paths.get("/var/www/spiritualcenter/images/" + fileName));
+        //return Files.readAllBytes(Paths.get(System.getProperty("user.home") + "/Downloads/images/" + fileName));
     }
 
     @GetMapping("/numberusers")
