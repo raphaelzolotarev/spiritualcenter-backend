@@ -342,7 +342,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     /**IMAGE**/
     @Override
     public void updateImage(UserDTO user, MultipartFile image) {
-        if(image.getSize() > 2_000_000){
+        if(image.getSize() > 6_000_000){
             throw new APIException("You need a small image to update your profile");
         }
         if(image.getContentType().equals("image/jpeg") || image.getContentType().equals("image/png")){
