@@ -3,7 +3,6 @@ package be.spiritualcenter.dtomapper;
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.dto.UserDTO;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Bean;
 /*
  * @author Raphael Zolotarev
  * @version 1.0

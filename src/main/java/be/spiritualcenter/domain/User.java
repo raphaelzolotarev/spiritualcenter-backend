@@ -7,10 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 /*
@@ -19,6 +16,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
+
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -61,5 +59,3 @@ public class User {
     @Column(name = "role")
     private Role role;
 }
-
-

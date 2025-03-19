@@ -1,4 +1,5 @@
 package be.spiritualcenter.filter;
+
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -52,7 +53,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             log.error(exception.getMessage());
             processError(request, response, exception);
         }
-
     }
 
     @Override
@@ -63,7 +63,6 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     private int getUserId(HttpServletRequest request) {
         return tokenProvider.getSubject(getToken(request), request);
     }
-
 
     private String getToken(HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(AUTHORIZATION)).filter(header -> header.startsWith(TOKEN_PREFIX)).map(token -> token.replace(TOKEN_PREFIX, EMPTY)).get();

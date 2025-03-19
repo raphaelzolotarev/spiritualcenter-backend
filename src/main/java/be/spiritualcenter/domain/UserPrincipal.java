@@ -1,4 +1,5 @@
 package be.spiritualcenter.domain;
+
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -13,11 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-
 import static be.spiritualcenter.dtomapper.UserDTOMapper.fromUser;
 
 @RequiredArgsConstructor

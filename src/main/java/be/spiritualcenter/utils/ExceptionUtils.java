@@ -5,7 +5,6 @@ package be.spiritualcenter.utils;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
-
 import be.spiritualcenter.domain.HttpResponse;
 import be.spiritualcenter.exception.APIException;
 import com.auth0.jwt.exceptions.InvalidClaimException;

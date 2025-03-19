@@ -5,12 +5,10 @@ package be.spiritualcenter.domain;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 import org.springframework.http.HttpStatus;
-
 import java.util.Map;
 
 @Data
@@ -25,40 +23,3 @@ public class HttpResponse {
     protected  String devMessage;
     protected Map<?,?> data;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

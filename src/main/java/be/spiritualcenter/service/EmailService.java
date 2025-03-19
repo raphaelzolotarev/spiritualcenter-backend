@@ -1,6 +1,5 @@
 package be.spiritualcenter.service;
 
-
 /*
  * @author Raphael Zolotarev
  * @version 1.0

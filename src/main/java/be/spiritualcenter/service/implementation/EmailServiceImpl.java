@@ -1,6 +1,5 @@
 package be.spiritualcenter.service.implementation;
 
-
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -49,11 +48,3 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 }
-
-
-
-
-
-
-
-

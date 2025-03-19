@@ -31,5 +31,4 @@ public class UserQuery {
     public static final String TOGGLE_USER_MFA_QUERY = "UPDATE user SET using_mfa = :isUsingMfa WHERE email = :email";
     public static final String UPDATE_USER_IMAGE_QUERY = "UPDATE user SET profile_picture = :imageUrl WHERE user_id = :id";
     public static final String UPDATE_USER_PASSWORD_BY_USER_ID_QUERY = "UPDATE user SET password = :password WHERE user_id = :id";
-
 }

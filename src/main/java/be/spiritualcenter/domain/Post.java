@@ -1,18 +1,12 @@
 package be.spiritualcenter.domain;
 
-import be.spiritualcenter.enums.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 /*
@@ -21,6 +15,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
+
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -43,5 +38,3 @@ public class Post {
     @Column(name = "date")
     private LocalDateTime date;
 }
-
-

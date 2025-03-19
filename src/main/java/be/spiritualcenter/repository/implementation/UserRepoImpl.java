@@ -26,7 +26,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,18 +37,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static be.spiritualcenter.constants.Constants.DATE_FORMAT;
 import static be.spiritualcenter.enums.VerificationType.ACCOUNT;
 import static be.spiritualcenter.enums.VerificationType.PASSWORD;
 import static be.spiritualcenter.query.UserQuery.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.time.DateFormatUtils.format;
 import static org.apache.commons.lang3.time.DateUtils.addDays;
-import static org.hibernate.type.descriptor.java.JdbcDateJavaType.DATE_FORMAT;
 import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath;
-
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -71,8 +68,6 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     public User create(User user) {
         if (getEmailCount(user.getEmail().trim().toLowerCase())>0) throw new APIException("Email already exists");
         if (userRepoJpa.findAll().size()>=100) throw new APIException("Maximum 100 users reached");
-        if (userRepoJpa.findUserByPhone(user.getPhone())) throw new APIException("Phone already exists");
-        if (userRepoJpa.findUserByUsername(user.getUsername())) throw new APIException("Username already exists");
         try{
             KeyHolder holder = new GeneratedKeyHolder();
             SqlParameterSource params = getSqlParameterSource(user);
@@ -90,7 +85,6 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             throw new APIException("An error occurred.");
         }
     }
-
 
     private void sendEmail(String firstName, String email, String verificationUrl, VerificationType verificationType) {
         CompletableFuture.runAsync(() -> emailService.sendVerificationEmail(firstName, email, verificationUrl, verificationType));
@@ -111,16 +105,6 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
             log.error(exception.getMessage());
             throw new APIException("An error occurred. Please try again.");
         }
-    }
-
-    @Override
-    public User update(User data) {
-        return null;
-    }
-
-    @Override
-    public Boolean delete(int id) {
-        return null;
     }
 
     @Override
@@ -193,18 +177,6 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     @Override
-    public void renewPassword(String key, String password, String confirmPassword) {
-        if(!password.equals(confirmPassword) || isLinkExpired(key, PASSWORD)) throw new APIException("Passwords don't match. Please try again.");
-        try {
-            jdbc.update(UPDATE_USER_PASSWORD_BY_URL_QUERY, Map.of("password", encoder.encode(password), "url", getVerificationURL(key, PASSWORD.getType())));
-            jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, Map.of("url", getVerificationURL(key, PASSWORD.getType())));
-        } catch (Exception exception) {
-            log.error(exception.getMessage());
-            throw new APIException("An error occurred. Please try again.");
-        }
-    }
-
-    @Override
     public void renewPassword(int userId, String password, String confirmPassword) {
         if(!password.equals(confirmPassword)) throw new APIException("Passwords don't match. Please try again.");
         try {
@@ -263,7 +235,7 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
     }
 
     private String getVerificationURL(String key, String type){
-        return fromCurrentContextPath().path("/user/verify/" + type.toLowerCase() + "/" + key).toUriString();
+        return fromCurrentContextPath().path("/user/verify/" + type.toLowerCase() + "/" + key).toUriString().replace("8080", "4200");
     }
     private Boolean isLinkExpired(String key, VerificationType password) {
         try {
@@ -408,7 +380,3 @@ public class UserRepoImpl implements UserRepo<User>, UserDetailsService {
         log.info("File saved in: {} folder", fileStorageLocation);
     }
 }
-
-
-
-

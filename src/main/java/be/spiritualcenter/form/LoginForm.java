@@ -6,7 +6,6 @@ package be.spiritualcenter.form;
  * @since 03/03/2025
  */
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 

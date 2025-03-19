@@ -1,9 +1,6 @@
 package be.spiritualcenter.dto;
 
 import be.spiritualcenter.enums.Role;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 
 /*
@@ -12,6 +9,7 @@ import lombok.*;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,5 +24,4 @@ public class UserDTO {
     private boolean isNotLocked;
     private boolean isUsingMfa;
     private Role role;
-
 }

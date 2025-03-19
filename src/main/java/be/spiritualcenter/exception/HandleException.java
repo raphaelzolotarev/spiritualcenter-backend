@@ -1,4 +1,5 @@
 package be.spiritualcenter.exception;
+
 /*
  * @author Raphael Zolotarev
  * @version 1.0
@@ -25,13 +26,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
 import java.nio.file.AccessDeniedException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
@@ -167,7 +166,6 @@ public class HandleException extends ResponseEntityExceptionHandler implements E
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
                         .devMessage(exception.getMessage())
-                        //.reason(exception.getMessage() + ". Please check your email and verify your account.")
                         .reason("User account is currently disabled")
                         .status(BAD_REQUEST)
                         .statusCode(BAD_REQUEST.value()).build()
@@ -181,7 +179,6 @@ public class HandleException extends ResponseEntityExceptionHandler implements E
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
                         .devMessage(exception.getMessage())
-                        //.reason(exception.getMessage() + ", too many failed attempts.")
                         .reason("User account is currently locked")
                         .status(BAD_REQUEST)
                         .statusCode(BAD_REQUEST.value()).build()
@@ -227,8 +224,3 @@ public class HandleException extends ResponseEntityExceptionHandler implements E
         return "Some error occurred";
     }
 }
-
-
-
-
-

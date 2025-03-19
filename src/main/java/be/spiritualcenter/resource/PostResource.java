@@ -1,6 +1,5 @@
 package be.spiritualcenter.resource;
 
-
 import be.spiritualcenter.domain.Post;
 import be.spiritualcenter.exception.APIException;
 import be.spiritualcenter.service.PostService;

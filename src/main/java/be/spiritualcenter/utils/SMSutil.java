@@ -5,13 +5,11 @@ package be.spiritualcenter.utils;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
-
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import static com.twilio.rest.api.v2010.account.Message.creator;
 
 @Component
@@ -28,6 +26,4 @@ public class SMSutil {
         Message message = creator(new PhoneNumber("+32" + to.substring(1)), new PhoneNumber(FROM_NUMBER), messageBody).create();
         System.out.println(message);
     }
-
-
 }

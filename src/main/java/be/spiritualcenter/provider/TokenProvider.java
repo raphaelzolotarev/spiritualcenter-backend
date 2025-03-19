@@ -6,9 +6,7 @@ package be.spiritualcenter.provider;
  * @since 03/03/2025
  */
 
-import be.spiritualcenter.domain.User;
 import be.spiritualcenter.domain.UserPrincipal;
-import be.spiritualcenter.enums.Role;
 import be.spiritualcenter.service.UserService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -16,10 +14,8 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.InvalidClaimException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.ctc.wstx.util.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,13 +24,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
 import static be.spiritualcenter.constants.Constants.*;
-import static be.spiritualcenter.dtomapper.UserDTOMapper.toUser;
 import static com.auth0.jwt.algorithms.Algorithm.HMAC512;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
@@ -46,8 +40,6 @@ public class TokenProvider {
     @Value("${jwt.secret}")
     private String secret;
     private final UserService userService;
-
-
 
     /**CREATE**/
         // Access token: Issuer, audience, creation/expiration date, User object, permissions, token encryption
@@ -71,7 +63,6 @@ public class TokenProvider {
             return userPasswordAuthToken;
         }
 
-
     /**ROLES**/
         // Retrieves the user's roles
         private String[] getClaimsFromUser(UserPrincipal userPrincipal) {
@@ -88,7 +79,6 @@ public class TokenProvider {
             String[] claims = getClaimsFromToken(token);
             return stream(claims).map(SimpleGrantedAuthority::new).collect(toList());
         }
-
 
     /**CHECK**/
         // Checks if a token is valid
@@ -124,6 +114,4 @@ public class TokenProvider {
                 throw exception;
             }
         }
-
-
 }

@@ -8,11 +8,9 @@ package be.spiritualcenter.service.implementation;
 
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.dto.UserDTO;
-import be.spiritualcenter.dtomapper.UserDTOMapper;
 import be.spiritualcenter.form.UpdateForm;
 import be.spiritualcenter.repository.UserRepo;
 import be.spiritualcenter.repository.UserRepoJpa;
-import be.spiritualcenter.repository.implementation.UserRepoImpl;
 import be.spiritualcenter.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +30,12 @@ import static org.springframework.data.domain.PageRequest.of;
 public class UserServiceImpl implements UserService {
     private final UserRepo<User> userRepo;
     private final UserRepoJpa userRepoJpa;
+
     @Override
     public UserDTO createUser(User user) {
         return mapToUserDTO(userRepo.create(user));
     }
+
     @Override
     public UserDTO getUserByUsername(String username) {
         return mapToUserDTO(userRepo.getUserByUsername(username));
@@ -90,6 +90,7 @@ public class UserServiceImpl implements UserService {
     public void updateAccountSettings(int userId, Boolean enabled, Boolean notLocked) {
         userRepo.updateAccountSettings(userId, enabled, notLocked);
     }
+
     @Override
     public UserDTO toggleMfa(String email) {
         return mapToUserDTO(userRepo.toggleMfa(email));
@@ -100,13 +101,8 @@ public class UserServiceImpl implements UserService {
         userRepo.updateImage(user, image);
     }
 
-    private UserDTO mapToUserDTO(User user){
+    private UserDTO mapToUserDTO(User user) {
         return fromUser(user);
-    }
-
-    @Override
-    public Page<User> getAllUsers(int page, int size) {
-        return userRepoJpa.findAll(of(page, size));
     }
 
     @Override
@@ -118,5 +114,10 @@ public class UserServiceImpl implements UserService {
     public Page<User> searchUsers(String name, int page, int size, String type, String order) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(order.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, type));
         return userRepoJpa.findByUsernameContaining(name, pageable);
+    }
+
+    @Override
+    public void deleteUserById(int id) {
+        userRepoJpa.deleteById(id);
     }
 }

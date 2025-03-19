@@ -5,14 +5,11 @@ package be.spiritualcenter.rowmapper;
  * @license Copyright (c) 2025 www.zolotarev.eu
  * @since 03/03/2025
  */
-
 import be.spiritualcenter.domain.User;
 import be.spiritualcenter.enums.Role;
 import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 
 public class UserRowMapper implements RowMapper<User> {
     @Override
@@ -31,17 +28,3 @@ public class UserRowMapper implements RowMapper<User> {
                 .build();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
